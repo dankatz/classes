@@ -17,11 +17,11 @@ library(prism)
 #rm(list=ls())
 
 #prism_set_dl_dir("~/prism") 
-#prism_set_dl_dir("C:/Users/dsk273/Documents/prism")
-prism_set_dl_dir("C:/Users/danka/Documents/prism")
+prism_set_dl_dir("C:/Users/dsk273/Documents/prism")
+#prism_set_dl_dir("C:/Users/danka/Documents/prism")
 
-#setwd("C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab") 
-setwd("C:/Users/danka/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab") 
+setwd("C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab") 
+#setwd("C:/Users/danka/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab") 
 
 ### herbarium data: add in and process ################################################################
 herb_raw <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1QHGdkFVKz0HLat1AIl2sYYE3dHnVZeKN1QB3X-yxbi0/edit?usp=sharing", .name_repair = "universal")
@@ -57,20 +57,39 @@ ith_met <- ith_met_raw %>%
                            ))
 
 ith_met_month <- ith_met %>% 
-  filter(month_c == 3 | month_c == 4) %>% 
+ # filter(month_c == 3 | month_c == 4) %>% 
+  filter(month_c == 3 ) %>% 
   group_by(year_c) %>% 
-  summarize(Tmean_mar_apr = mean(Tmean, na.rm = TRUE))
+  summarize(Tmean_mar = round(mean(Tmean, na.rm = TRUE), 2))
 
-ggplot(ith_met_month, aes(x = year_c, y = Tmean_mar_apr)) + geom_point() +
-  geom_line(aes(x = year_c, y = zoo::rollmean(Tmean_mar_apr, 20, na.pad = TRUE)))
+ggplot(ith_met_month, aes(x = year_c, y = Tmean_mar)) + geom_point() +
+  geom_line(aes(x = year_c, y = zoo::rollmean(Tmean_mar, 20, na.pad = TRUE)))
 
 ith_met %>% 
-  #filter(month_c == 3 | month_c == 4) %>% 
+  #filter(month_c == 3 ) %>% 
   group_by(year_c, site) %>% 
-  summarize(Tmean_mar_apr = mean(Tmean, na.rm = TRUE)) %>% 
+  summarize(Tmean_mar = mean(Tmean, na.rm = TRUE)) %>% 
   filter(!year_c %in% c(1898, 1930, 1943, 1969, 2023)) %>% 
-ggplot(aes(x = year_c, y = Tmean_mar_apr, color = site)) + geom_point() +
-  geom_line(aes(x = year_c, y = zoo::rollmean(Tmean_mar_apr, 5, na.pad = TRUE))) + theme_bw(base_size = 26) + xlab("year") + ylab("Mean temperature in March and April (°F)")
+ggplot(aes(x = year_c, y = Tmean_mar, color = site)) + geom_point() +
+  geom_line(aes(x = year_c, y = zoo::rollmean(Tmean_mar, 5, na.pad = TRUE))) + theme_bw(base_size = 26) + xlab("year") + ylab("Mean temperature (°F)") 
+
+ith_met %>% 
+  #filter(month_c == 3 ) %>% 
+  group_by(year_c, site) %>% 
+  summarize(Tmean_mar = mean(Tmean, na.rm = TRUE)) %>% 
+  filter(year_c > 1969 & year_c < 2023) %>% 
+  #filter(!year_c %in% c(1898, 1930, 1943, 1969, 2023)) %>% 
+  ggplot(aes(x = year_c, y = Tmean_mar, color = site)) + geom_point() +
+  geom_line(aes(x = year_c, y = zoo::rollmean(Tmean_mar, 5, na.pad = TRUE))) + theme_bw(base_size = 26) + xlab("year") + ylab("Mean temperature (°F)") +
+  geom_smooth(method = "lm")
+
+test <- ith_met %>% 
+  #filter(month_c == 3 ) %>% 
+  group_by(year_c, site) %>% 
+  summarize(Tmean_mar = mean(Tmean, na.rm = TRUE)) %>% 
+  filter(year_c > 1969 & year_c < 2023) 
+
+summary(lm(Tmean_mar ~year_c, data = test))
 
 ## download CRUTS =====================================================================================================
 # https://www.nature.com/articles/s41597-020-0453-3
@@ -114,7 +133,7 @@ herb <- left_join(herb, cruts_tmean_df_mar_apr)
 
 #data vis and regression
 #compare the two temperature time series
-ggplot(herb, aes(x = Tmean_crut_mar_apr * (9/5) + 32, y = Tmean_mar_apr , color = year_c)) + geom_point(size = 4) + geom_abline(slope = 1, intercept = 0, lty = 2) + xlab("Modeled temperature (°F)") + ylab("Measured temperature (°F)") + theme_bw(base_size = 24)
+ggplot(herb, aes(x = Tmean_crut_mar_apr * (9/5) + 32, y = Tmean_mar , color = year_c)) + geom_point(size = 4) + geom_abline(slope = 1, intercept = 0, lty = 2) + xlab("Modeled temperature (°F)") + ylab("Measured temperature (°F)") + theme_bw(base_size = 24)
 
 
 ggplot(herb, aes(x = Tmean_mar_apr, y = DOY, color = open_flow)) + geom_point() + facet_wrap(~Species) + geom_smooth(method = "lm")
@@ -257,11 +276,14 @@ mundy <- mundy_raw %>%
          doy_start = yday(date_start),
          doy_stop = yday(date_stop)) 
 
-mundy <- left_join(mundy, ith_met_month)
+mundy <- left_join(mundy, ith_met_month) %>%
+  filter(species != "Cardamine maxima")
 
 ggplot(mundy, aes(x = year_c, y = doy_stop)) + geom_point() + theme_bw() + geom_smooth(method = "lm", se = FALSE) +facet_wrap(~species)
 
-ggplot(mundy, aes(x = Tmean_mar_apr, y = doy_start)) + geom_point() + theme_bw() + geom_smooth(method = "lm") +facet_wrap(~species)
+ggplot(mundy, aes(x = Tmean_mar, y = doy_start)) + geom_point() + theme_bw() + geom_smooth(method = "lm") +facet_wrap(~species) +
+  geom_vline(xintercept = 37.2, color = "red") + xlab("average temperate in March (F)") + ylab("start of flowering (Julian day)") +
+  geom_hline(yintercept = 111, color = "purple")
 
 
 
@@ -299,20 +321,21 @@ mundy_export <- mundy %>% rename(Species = species)
 
 
 ## export a file for each species for each dataset
-setwd("C:/Users/danka/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze") 
-sp_list <- unique(herb_export$Species)
+setwd("C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze 2024 b") 
+sp_list <- unique(mundy_export$Species)
 
 for(i in 1:6){
-  herb_export_sp <- filter(herb_export, Species == sp_list[i])
-  write_csv(herb_export_sp, 
-            paste(sp_list[i], "herbarium data.csv"))
-  
-  npn_export_sp <- filter(npn_export, Species == sp_list[i])
-  write_csv(npn_export_sp, 
-            paste(sp_list[i], "NPN data.csv"))
+  # herb_export_sp <- filter(herb_export, Species == sp_list[i])
+  # write_csv(herb_export_sp, 
+  #           paste(sp_list[i], "herbarium data.csv"))
+  # 
+  # npn_export_sp <- filter(npn_export, Species == sp_list[i])
+  # write_csv(npn_export_sp, 
+  #           paste(sp_list[i], "NPN data.csv"))
   
   mundy_export_sp <- filter(mundy_export, Species == sp_list[i])
-  write_csv(mundy_export_sp, paste(sp_list[i], "Mundy data.csv"))
+  write_csv(mundy_export_sp, paste(sp_list[i], "Mundy data_2024_c.csv"))
 }
 
+write_csv(mundy_export, "C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze 2024 b/all_species.csv")
 
