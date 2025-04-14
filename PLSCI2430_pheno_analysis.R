@@ -282,8 +282,9 @@ mundy <- left_join(mundy, ith_met_month) %>%
 ggplot(mundy, aes(x = year_c, y = doy_stop)) + geom_point() + theme_bw() + geom_smooth(method = "lm", se = FALSE) +facet_wrap(~species)
 
 ggplot(mundy, aes(x = Tmean_mar, y = doy_start)) + geom_point() + theme_bw() + geom_smooth(method = "lm") +facet_wrap(~species) +
-  geom_vline(xintercept = 37.2, color = "red") + xlab("average temperate in March (F)") + ylab("start of flowering (Julian day)") +
-  geom_hline(yintercept = 111, color = "purple")
+  xlab("average temperate in March (F)") + ylab("start of flowering (Julian day)") 
+ # geom_vline(xintercept = 35.6, color = "red") + 
+ # geom_hline(yintercept = 107, color = "purple")
 
 
 
@@ -321,7 +322,8 @@ mundy_export <- mundy %>% rename(Species = species)
 
 
 ## export a file for each species for each dataset
-setwd("C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze 2024 b") 
+#setwd("C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze 2024 b") 
+setwd("C:/Users/dsk273/Box/classes/Plant Ecology and Evolution 2025 spring/week 13_Apr 15 17_ phenology")
 sp_list <- unique(mundy_export$Species)
 
 for(i in 1:6){
