@@ -341,3 +341,80 @@ for(i in 1:6){
 
 write_csv(mundy_export, "C:/Users/dsk273/Box/2430_Plant Ecology and Evolution (Chelsea Specht)/Ecology/Phenology lab/for class to analyze 2024 b/all_species.csv")
 
+
+
+
+### an example of a t-test for edge vs interior species richness ############################################
+
+ei <- read_sheet("https://docs.google.com/spreadsheets/d/1X7agC6DVASPQUnDYijK_tPadlD6jcKDQhzmAOwS9870/edit?usp=sharing", sheet = "long") %>% 
+  janitor::clean_names()
+head(ei)
+
+#barplot of raw observations
+ei %>% 
+  ggplot(aes(x = your_name_s, y = number_of_plant_species_observed, fill = interior_or_exterior)) + geom_col(position = "dodge") + 
+  ggthemes::theme_few(base_size = 16) + ylab("species richness (n)") + xlab("")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_fill_discrete(name = "forest location")
+
+
+#plot of means and sd
+ei %>% 
+  group_by(interior_or_exterior) %>% 
+  summarize(mean_sr = mean(number_of_plant_species_observed),
+            sd_sr = sd(number_of_plant_species_observed)) %>% 
+ggplot(aes(x = interior_or_exterior, y = mean_sr)) + geom_col() + 
+  #geom_errorbar(aes(x = interior_or_exterior, ymin = mean_sr, ymax = mean_sr + sd_sr), width = 0.2) +
+  ggthemes::theme_few(base_size = 16) + xlab("forest location") + ylab("mean species richness (n)") +
+  scale_y_continuous(limits = c(0, 22))
+
+#boxplot of means and sd
+ei %>% 
+  # group_by(interior_or_exterior) %>% 
+  # summarize(mean_sr = mean(number_of_plant_species_observed),
+  #           sd_sr = sd(number_of_plant_species_observed)) %>% 
+  ggplot(aes(x = interior_or_exterior, y = number_of_plant_species_observed)) + 
+ # geom_boxplot() + 
+  geom_jitter(width = 0.2)+
+  #geom_errorbar(aes(x = interior_or_exterior, ymin = mean_sr, ymax = mean_sr + sd_sr), width = 0.2) +
+  ggthemes::theme_few(base_size = 16) + xlab("forest location") + ylab("mean species richness (n)") +
+  scale_y_continuous(limits = c(0, 22))
+
+
+#
+ei %>% 
+  ggplot(aes(x = interior_or_exterior, y = number_of_plant_species_observed, group = your_name_s)) + 
+  #geom_line() + 
+  geom_point()+
+   ggthemes::theme_few(base_size = 16) + xlab("forest location") + ylab("species richness (n)") 
+
+
+ei %>% 
+  ggplot(aes(x = number_of_plant_species_observed)) + 
+  #geom_line() + 
+  geom_histogram()+ scale_fill_discrete()+
+  ggthemes::theme_few(base_size = 16) + xlab("number of species") + ylab("count")
+
+
+
+#scatterplot of observations 
+ei %>% 
+  pivot_wider(id_cols = c(your_name_s), names_from = interior_or_exterior, values_from = number_of_plant_species_observed) %>% 
+  mutate(dif = Interior - Exterior) %>% 
+  ggplot(aes(x = Interior, y = Exterior)) + geom_point() +   ggthemes::theme_few(base_size = 16) + 
+  geom_abline(slope = 1, intercept = 0, lty = 2) + 
+  xlab("interior (number of species)") + ylab("exterior (number of species)")
+
+#histogram of difference 
+ei %>% 
+  pivot_wider(id_cols = c(your_name_s), names_from = interior_or_exterior, values_from = number_of_plant_species_observed) %>% 
+  mutate(dif = Interior - Exterior) %>% 
+  ggplot(aes(x = Exterior - Interior)) + geom_histogram() +   ggthemes::theme_few(base_size = 16) + 
+  xlab("difference between interior and exterior (number of species)") 
+
+
+
+ei_clean <- filter(ei, your_name_s != "Abbie") 
+
+t.test(ei_clean$number_of_plant_species_observed[ei_clean$interior_or_exterior == "Interior"], 
+       ei_clean$number_of_plant_species_observed[ei_clean$interior_or_exterior == "Exterior"], 
+       paired = FALSE)
